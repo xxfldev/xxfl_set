@@ -316,10 +316,6 @@ struct _bplus_tree_const_iterator : _bplus_tree_iterator_base<_value_type, _tree
     { return _base::_value_ptr != x._value_ptr; }
 };
 
-} // xxfl
-
-namespace std {
-
 template<typename _value_type, uint32_t _tree_height_max>
 inline bool
 operator == (const xxfl::_bplus_tree_iterator<_value_type, _tree_height_max>& x,
@@ -332,4 +328,4 @@ operator != (const xxfl::_bplus_tree_iterator<_value_type, _tree_height_max>& x,
              const xxfl::_bplus_tree_const_iterator<_value_type, _tree_height_max>& y) noexcept
 { return x._value_ptr != y._value_ptr; }
 
-} // std
+} // xxfl

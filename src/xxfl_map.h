@@ -290,17 +290,13 @@ public:
     }
 
     template<typename _a, typename _b, typename _c, typename _d, uint32_t _e, uint32_t _f>
-    friend bool std::operator == (const xxfl::map<_a, _b, _c, _d, _e, _f>&,
-                                  const xxfl::map<_a, _b, _c, _d, _e, _f>&);
+    friend bool xxfl::operator == (const xxfl::map<_a, _b, _c, _d, _e, _f>&,
+                                   const xxfl::map<_a, _b, _c, _d, _e, _f>&);
 
     template<typename _a, typename _b, typename _c, typename _d, uint32_t _e, uint32_t _f>
-    friend bool std::operator < (const xxfl::map<_a, _b, _c, _d, _e, _f>&,
-                                 const xxfl::map<_a, _b, _c, _d, _e, _f>&);
+    friend bool xxfl::operator < (const xxfl::map<_a, _b, _c, _d, _e, _f>&,
+                                  const xxfl::map<_a, _b, _c, _d, _e, _f>&);
 };
-
-} // xxfl
-
-namespace std {
 
 template<typename _a, typename _b, typename _c, typename _d, uint32_t _e, uint32_t _f>
 inline bool operator == (const xxfl::map<_a, _b, _c, _d, _e, _f>& x,
@@ -337,4 +333,4 @@ inline void swap(xxfl::map<_a, _b, _c, _d, _e, _f>& x,
                  xxfl::map<_a, _b, _c, _d, _e, _f>& y)
 { x.swap(y); }
 
-} // std
+} // xxfl

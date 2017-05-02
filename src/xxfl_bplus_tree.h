@@ -1775,10 +1775,6 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
 
 }; // _bplus_tree
 
-} // xxfl
-
-namespace std {
-
 template<typename _a, typename _b, typename _c, typename _d, typename _e, uint32_t _f, uint32_t _g>
 inline bool operator == (const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g>& x,
                          const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g>& y)
@@ -1793,4 +1789,4 @@ inline bool operator < (const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g>& x,
     return std::lexicographical_compare(x.cbegin(), x.cend(), y.cbegin(), y.cend());
 }
 
-} // std
+} // xxfl

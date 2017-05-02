@@ -194,17 +194,13 @@ public:
     { return _tree.template equal_range<const_iterator>(key); }
 
     template<typename _a, typename _b, typename _c, uint32_t _d, uint32_t _e>
-    friend bool std::operator == (const xxfl::set<_a, _b, _c, _d, _e>&,
-                                  const xxfl::set<_a, _b, _c, _d, _e>&);
+    friend bool xxfl::operator == (const xxfl::set<_a, _b, _c, _d, _e>&,
+                                   const xxfl::set<_a, _b, _c, _d, _e>&);
 
     template<typename _a, typename _b, typename _c, uint32_t _d, uint32_t _e>
-    friend bool std::operator < (const xxfl::set<_a, _b, _c, _d, _e>&,
-                                 const xxfl::set<_a, _b, _c, _d, _e>&);
+    friend bool xxfl::operator < (const xxfl::set<_a, _b, _c, _d, _e>&,
+                                  const xxfl::set<_a, _b, _c, _d, _e>&);
 };
-
-} // xxfl
-
-namespace std {
 
 template<typename _a, typename _b, typename _c, uint32_t _d, uint32_t _e>
 inline bool operator == (const xxfl::set<_a, _b, _c, _d, _e>& x,
@@ -241,4 +237,4 @@ inline void swap(xxfl::set<_a, _b, _c, _d, _e>& x,
                  xxfl::set<_a, _b, _c, _d, _e>& y)
 { x.swap(y); }
 
-} // std
+} // xxfl
