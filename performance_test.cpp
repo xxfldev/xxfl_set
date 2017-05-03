@@ -186,9 +186,9 @@ void container_test_erase_performance_sequential(uint32_t erase_count, uint32_t 
     for (uint32_t i = 0; i < loops_count; ++i)
     {
         _container bb(aa);
-        for (uint32_t i = 0; i < erase_count; ++i)
+        for (uint32_t j = 0; j < erase_count; ++j)
         {
-            container_op<_container>::erase(bb, i);
+            container_op<_container>::erase(bb, j);
         }
     }
 
@@ -206,7 +206,7 @@ void container_test_erase_performance_random(uint32_t erase_count, uint32_t loop
     for (uint32_t i = 0; i < loops_count; ++i)
     {
         _container bb(aa);
-        for (uint32_t i = 0; i < erase_count; ++i)
+        for (uint32_t j = 0; j < erase_count; ++j)
         {
             container_op<_container>::erase(bb, rand_gen() % erase_count);
         }
@@ -486,7 +486,7 @@ void container_test_combined_performance(uint32_t values_count, uint32_t loops_c
         _container aa;
         container_insert_sequential(aa, values_count);
 
-        for (uint32_t i = 0; i < values_count; ++i)
+        for (uint32_t j = 0; j < values_count; ++j)
         {
             auto it = container_op<_container>::find(aa, rand_gen() % values_count);
             tmp += (uint64_t)&it;
@@ -497,7 +497,7 @@ void container_test_combined_performance(uint32_t values_count, uint32_t loops_c
             tmp += (uint64_t)&value;
         }
 
-        for (uint32_t i = 0; i < values_count; ++i)
+        for (uint32_t j = 0; j < values_count; ++j)
         {
             container_op<_container>::erase(aa, rand_gen() % values_count);
         }
