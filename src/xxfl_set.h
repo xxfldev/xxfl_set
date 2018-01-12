@@ -17,12 +17,13 @@ public:
     typedef _compare   value_compare;
     typedef _allocator allocator_type;
 
-    typedef _bplus_tree<key_type, value_type, std::_Identity<value_type>, key_compare, allocator_type,
+    typedef _bplus_tree<key_type, value_type, value_type,
+                        std::__identity<value_type>, key_compare, allocator_type,
                         _bucket_bysize_max, _tree_height_max> _bplus_tree_type;
 
-protected:
     _bplus_tree_type _tree;
 
+protected:
     typedef typename __alloc_wrapper<allocator_type>::template rebind<key_type>::other _key_alloc_type;
     typedef __alloc_wrapper<_key_alloc_type> _alloc_wrapper;
 
@@ -192,14 +193,6 @@ public:
 
     std::pair<const_iterator, const_iterator> equal_range(const key_type& key) const
     { return _tree.template equal_range<const_iterator>(key); }
-
-    template<typename _a, typename _b, typename _c, uint32_t _d, uint32_t _e>
-    friend bool xxfl::operator == (const xxfl::set<_a, _b, _c, _d, _e>&,
-                                   const xxfl::set<_a, _b, _c, _d, _e>&);
-
-    template<typename _a, typename _b, typename _c, uint32_t _d, uint32_t _e>
-    friend bool xxfl::operator < (const xxfl::set<_a, _b, _c, _d, _e>&,
-                                  const xxfl::set<_a, _b, _c, _d, _e>&);
 };
 
 template<typename _a, typename _b, typename _c, uint32_t _d, uint32_t _e>

@@ -1,3 +1,4 @@
+#include <thread>
 #include "xxfl_set_test.h"
 
 #if defined(_WIN32)
@@ -20,6 +21,8 @@ uint64_t get_memory_usage()
 template<typename _container>
 void container_test_memory_usage_sequential(uint32_t insert_count, uint32_t containers_count)
 {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
     uint64_t before_usage = get_memory_usage();
 
     std::vector<_container> containers;
@@ -31,12 +34,16 @@ void container_test_memory_usage_sequential(uint32_t insert_count, uint32_t cont
         container_insert_sequential(containers.back(), insert_count);
     }
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
     std::printf("%" PRIu64 " kbytes\n", get_memory_usage() - before_usage);
 }
 
 template<typename _container>
 void container_test_memory_usage_random(uint32_t insert_count, uint32_t containers_count)
 {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
     uint64_t before_usage = get_memory_usage();
 
     std::vector<_container> containers;
@@ -47,6 +54,8 @@ void container_test_memory_usage_random(uint32_t insert_count, uint32_t containe
         containers.push_back(_container());
         container_insert_random_2(containers.back(), insert_count);
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     std::printf("%" PRIu64 " kbytes\n", get_memory_usage() - before_usage);
 }

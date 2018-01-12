@@ -15,10 +15,12 @@ public:
     typedef _key_type                                key_type;
     typedef _mapped_type                             mapped_type;
     typedef std::pair<const _key_type, _mapped_type> value_type;
+    typedef std::pair<_key_type, _mapped_type>       moveable_value_type;
     typedef _compare                                 key_compare;
     typedef _allocator                               allocator_type;
 
-    typedef _bplus_tree<key_type, value_type, std::_Select1st<value_type>, key_compare, allocator_type,
+    typedef _bplus_tree<key_type, value_type, moveable_value_type,
+                        std::__select1st<value_type>, key_compare, allocator_type,
                         _bucket_bysize_max, _tree_height_max> _bplus_tree_type;
 
     struct value_compare
@@ -31,9 +33,9 @@ public:
         { return _comp(x.first, y.first); }
     };
 
-protected:
     _bplus_tree_type _tree;
 
+protected:
     typedef typename __alloc_wrapper<allocator_type>::template rebind<key_type>::other _pair_alloc_type;
     typedef __alloc_wrapper<_pair_alloc_type> _alloc_wrapper;
 
@@ -288,14 +290,6 @@ public:
         }
         return (*it).second;
     }
-
-    template<typename _a, typename _b, typename _c, typename _d, uint32_t _e, uint32_t _f>
-    friend bool xxfl::operator == (const xxfl::map<_a, _b, _c, _d, _e, _f>&,
-                                   const xxfl::map<_a, _b, _c, _d, _e, _f>&);
-
-    template<typename _a, typename _b, typename _c, typename _d, uint32_t _e, uint32_t _f>
-    friend bool xxfl::operator < (const xxfl::map<_a, _b, _c, _d, _e, _f>&,
-                                  const xxfl::map<_a, _b, _c, _d, _e, _f>&);
 };
 
 template<typename _a, typename _b, typename _c, typename _d, uint32_t _e, uint32_t _f>

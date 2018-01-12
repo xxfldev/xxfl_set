@@ -6,6 +6,7 @@ namespace xxfl {
 #if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4200)
+#pragma warning(disable : 4624)
 #endif
 
 template<typename _value_type>
@@ -18,13 +19,17 @@ struct _bplus_tree_node
         uint32_t _bucket_bysize; // this field won't available except for root node
     };
 
-    uint8_t _bucket[];
+    union
+    {
+        _bplus_tree_node* _nodes_bucket[];
+        _value_type _values_bucket[];
+    };
 
-    _bplus_tree_node** nodes() const noexcept { return (_bplus_tree_node**)_bucket; }
-    _value_type* values() const noexcept { return (_value_type*)_bucket; }
+    _bplus_tree_node** nodes() const noexcept { return (_bplus_tree_node**)_nodes_bucket; }
+    _value_type* values() const noexcept { return (_value_type*)_values_bucket; }
 
-    _bplus_tree_node** nodes_end() const noexcept { return (_bplus_tree_node**)_bucket + _count; }
-    _value_type* values_end() const noexcept { return (_value_type*)_bucket + _count; }
+    _bplus_tree_node** nodes_end() const noexcept { return (_bplus_tree_node**)_nodes_bucket + _count; }
+    _value_type* values_end() const noexcept { return (_value_type*)_values_bucket + _count; }
 };
 
 #if defined(_MSC_VER)
@@ -205,6 +210,10 @@ struct _bplus_tree_iterator : _bplus_tree_iterator_base<_value_type, _tree_heigh
     typedef _value_type* pointer;
 
     using typename _base::_bplus_tree_type;
+
+#if defined(_MSC_VER)
+    typedef _base _Unchecked_type;
+#endif
 
     _bplus_tree_iterator() noexcept {}
 

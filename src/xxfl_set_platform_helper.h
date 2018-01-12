@@ -1,15 +1,24 @@
 #pragma once
 #include <memory>
 
-#if defined(_MSC_VER)
 namespace std {
+
+#if defined(_MSC_VER)
 
 #define __throw_out_of_range _Xout_of_range
 
-#define _Identity identity
+template<typename _tp>
+struct __identity : public unary_function<_tp, _tp>
+{
+    _tp& operator () (_tp& x) const
+    { return x; }
+
+    const _tp& operator () (const _tp& x) const
+    { return x; }
+};
 
 template<typename _pair>
-struct _Select1st : public unary_function<_pair, typename _pair::first_type>
+struct __select1st : public unary_function<_pair, typename _pair::first_type>
 {
     typename _pair::first_type& operator () (_pair& x) const
     { return x.first; }
@@ -21,8 +30,14 @@ struct _Select1st : public unary_function<_pair, typename _pair::first_type>
 template<typename _input_iterator>
 _input_iterator& __make_move_if_noexcept_iterator(_input_iterator& iter) { return iter; }
 
+#else
+
+#define __identity  _Identity
+#define __select1st _Select1st
+
+#endif
+
 } // std
-#endif  // _MSC_VER
 
 namespace xxfl {
 
@@ -30,24 +45,22 @@ template<typename _allocator>
 struct __alloc_wrapper
 {
 #if defined(_MSC_VER)
-    typedef std::_Wrap_alloc<_allocator> _alloc_traits;
-    typedef std::_Wrap_alloc<_allocator> _internal_allocator;
+    typedef std::allocator_traits<_allocator> _alloc_traits;
 #else
     typedef __gnu_cxx::__alloc_traits<_allocator> _alloc_traits;
-    typedef _allocator _internal_allocator;
 #endif
 
     typedef typename _alloc_traits::pointer         pointer;
     typedef typename _alloc_traits::const_pointer   const_pointer;
-    typedef typename _alloc_traits::reference       reference;
-    typedef typename _alloc_traits::const_reference const_reference;
-    typedef typename _alloc_traits::size_type       size_type;
-    typedef typename _alloc_traits::difference_type difference_type;
+    typedef typename _allocator::reference          reference;
+    typedef typename _allocator::const_reference    const_reference;
+    typedef typename _allocator::size_type          size_type;
+    typedef typename _allocator::difference_type    difference_type;
 
     template<typename _tp>
-    struct rebind { typedef typename _alloc_traits::template rebind<_tp>::other other; };
+    struct rebind { typedef typename _allocator::template rebind<_tp>::other other; };
 
-    _internal_allocator _alloc;
+    _allocator _alloc;
 
     static constexpr bool propagate_on_container_copy_assignment()
     {
@@ -79,7 +92,7 @@ struct __alloc_wrapper
     static constexpr bool is_nothrow_swap()
     {
 #if defined(_MSC_VER)
-        return std::_Is_nothrow_swappable<_internal_allocator>::value;
+        return std::_Is_nothrow_swappable<_allocator>::value;
 #else
         return _alloc_traits::_S_nothrow_swap();
 #endif
@@ -90,21 +103,16 @@ struct __alloc_wrapper
     __alloc_wrapper(_allocator&& a) : _alloc(std::move(a)) {}
     __alloc_wrapper(const __alloc_wrapper& wrapper) : _alloc(wrapper._alloc) {}
 
-#if defined(_MSC_VER)
-    __alloc_wrapper(const _internal_allocator& a) : _alloc(a) {}
-    __alloc_wrapper(_internal_allocator&& a) : _alloc(std::move(a)) {}
-#endif
-
-    _internal_allocator select_on_container_copy_construction() const
+    _allocator select_on_container_copy_construction() const
     {
 #if defined(_MSC_VER)
-        return _alloc.select_on_container_copy_construction();
+        return _alloc_traits::select_on_container_copy_construction(_alloc);
 #else
         return _alloc_traits::_S_select_on_copy(_alloc);
 #endif
     }
 
-    void copy_allocator(const _internal_allocator& a)
+    void copy_allocator(const _allocator& a)
     {
 #if defined(_MSC_VER)
         std::_Pocca(_alloc, a);
@@ -113,7 +121,7 @@ struct __alloc_wrapper
 #endif
     }
 
-    void move_allocator(_internal_allocator& a)
+    void move_allocator(_allocator& a)
     {
 #if defined(_MSC_VER)
         std::_Pocma(_alloc, a);
@@ -122,7 +130,7 @@ struct __alloc_wrapper
 #endif
     }
 
-    void swap_allocator(_internal_allocator& a)
+    void swap_allocator(_allocator& a)
     {
 #if defined(_MSC_VER)
         std::_Pocs(_alloc, a);
@@ -173,7 +181,7 @@ struct __alloc_wrapper
     void destroy(_input_iterator first, _input_iterator last)
     {
 #if defined(_MSC_VER)
-        std::_Destroy_range(first, last, _alloc);
+        std::_Destroy_range(first, last);
 #else
         std::_Destroy(first, last, _alloc);
 #endif

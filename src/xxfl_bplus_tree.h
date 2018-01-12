@@ -53,7 +53,8 @@ struct _bplus_tree_base
     _const_reverse_iterator crend() const noexcept { return _const_reverse_iterator(cbegin()); }
 };
 
-template<typename _key_type, typename _value_type, typename _key_of_value, typename _compare, typename _allocator,
+template<typename _key_type, typename _value_type, typename _moveable_value_type,
+         typename _key_of_value, typename _compare, typename _allocator,
          uint32_t _bucket_bysize_max, uint32_t _tree_height_max>
 struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
 {
@@ -582,9 +583,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
                 _node_type* new_root_node = allocate_root_node(root_bucket_bysize);
                 new_root_node->_count = _root_node->_count;
 
-                std::memcpy(new_root_node->values(),
-                            _root_node->values(),
-                            _root_node->_count * sizeof(_value_type));
+                for (uint32_t i = 0; i < _root_node->_count; ++i)
+                {
+                    _awrapper.construct(new_root_node->values() + i, std::move(_root_node->values()[i]));
+                    _awrapper.destroy(_root_node->values() + i);
+                }
 
                 it._value_ptr = new_root_node->values() + (it._value_ptr - _root_node->values());
 
@@ -601,11 +604,20 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
 
         if (cur_node->_count < __bucket_values_capacity_max)
         {
-            std::memmove(it._value_ptr + 1,
-                         it._value_ptr,
-                         (uintptr_t)cur_node->values_end() - (uintptr_t)it._value_ptr);
+            if (it._value_ptr == cur_node->values_end())
+            {
+                _awrapper.construct(it._value_ptr, std::forward<_args>(args)...);
+            }
+            else
+            {
+                _awrapper.construct(cur_node->values_end(), std::move(cur_node->values()[cur_node->_count - 1]));
 
-            _awrapper.construct(it._value_ptr, std::forward<_args>(args)...);
+                std::move_backward(it._value_ptr,
+                                   cur_node->values_end() - 1,
+                                   (_moveable_value_type*)cur_node->values_end());
+
+                *(_moveable_value_type*)it._value_ptr = _moveable_value_type(std::forward<_args>(args)...);
+            }
 
             ++cur_node->_count;
 
@@ -620,13 +632,17 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
 
         if (insert_pos < __bucket_values_capacity_max - __bucket_values_capacity_max / 2)
         {
-            std::memcpy(new_node->values(),
-                        cur_node->values() + __bucket_values_capacity_max / 2,
-                        (__bucket_values_capacity_max - __bucket_values_capacity_max / 2) * sizeof(_value_type));
+            _awrapper.construct(new_node->values(), std::move(cur_node->values()[__bucket_values_capacity_max / 2]));
 
-            std::memmove(it._value_ptr + 1,
-                         it._value_ptr,
-                         (__bucket_values_capacity_max / 2 - insert_pos) * sizeof(_value_type));
+            for (uint32_t i = 1; i < __bucket_values_capacity_max - __bucket_values_capacity_max / 2; ++i)
+            {
+                _awrapper.construct(new_node->values() + i, std::move(cur_node->values()[__bucket_values_capacity_max / 2 + i]));
+                _awrapper.destroy(cur_node->values() + __bucket_values_capacity_max / 2 + i);
+            }
+
+            std::move_backward(it._value_ptr,
+                               cur_node->values() + __bucket_values_capacity_max / 2,
+                               (_moveable_value_type*)cur_node->values() + __bucket_values_capacity_max / 2 + 1);
 
             new_node->_count = __bucket_values_capacity_max - __bucket_values_capacity_max / 2;
             cur_node->_count = __bucket_values_capacity_max / 2 + 1;
@@ -635,20 +651,23 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
         }
         else
         {
-            uint32_t new_insert_pos = insert_pos - (__bucket_values_capacity_max - __bucket_values_capacity_max / 2);
+            const uint32_t move_pos = __bucket_values_capacity_max - __bucket_values_capacity_max / 2;
 
-            std::memcpy(new_node->values(),
-                        cur_node->values() + (__bucket_values_capacity_max - __bucket_values_capacity_max / 2),
-                        new_insert_pos * sizeof(_value_type));
-
-            std::memcpy(new_node->values() + (new_insert_pos + 1),
-                        it._value_ptr,
-                        (__bucket_values_capacity_max / 2 - new_insert_pos) * sizeof(_value_type));
+            for (uint32_t i = move_pos; i < insert_pos; ++i)
+            {
+                _awrapper.construct(new_node->values() + i - move_pos, std::move(cur_node->values()[i]));
+                _awrapper.destroy(cur_node->values() + i);
+            }
+            for (uint32_t i = insert_pos; i < __bucket_values_capacity_max; ++i)
+            {
+                _awrapper.construct(new_node->values() + i - move_pos + 1, std::move(cur_node->values()[i]));
+                _awrapper.destroy(cur_node->values() + i);
+            }
 
             new_node->_count = __bucket_values_capacity_max / 2 + 1;
             cur_node->_count = __bucket_values_capacity_max - __bucket_values_capacity_max / 2;
 
-            it._value_ptr = new_node->values() + new_insert_pos;
+            it._value_ptr = new_node->values() + insert_pos - move_pos;
             x_in_new_node = true;
         }
 
@@ -854,15 +873,15 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
     {
         _output_iterator out(it._const_cast());
 
-        _awrapper.destroy(it._value_ptr);
-
         _node_type* cur_node = (_tree_height > 0)? *it._stack[0] : _root_node;
         uint32_t erase_pos = (uint32_t)(it._value_ptr - cur_node->values());
         bool value_at_end = erase_pos + 1 >= cur_node->_count;
 
-        std::memmove(it._value_ptr,
-                     it._value_ptr + 1,
-                     (cur_node->_count - erase_pos - 1) * sizeof(_value_type));
+        std::move(it._value_ptr + 1,
+                  cur_node->values_end(),
+                  (_moveable_value_type*)it._value_ptr);
+
+        _awrapper.destroy(cur_node->values_end() - 1);
 
         --_values_count;
         --cur_node->_count;
@@ -876,9 +895,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
                 _node_type* new_root_node = allocate_root_node(_root_node->_bucket_bysize >> 1);
                 new_root_node->_count = _root_node->_count;
 
-                std::memcpy(new_root_node->values(),
-                            _root_node->values(),
-                            _root_node->_count * sizeof(_value_type));
+                for (uint32_t i = 0; i < _root_node->_count; ++i)
+                {
+                    _awrapper.construct(new_root_node->values() + i, std::move(_root_node->values()[i]));
+                    _awrapper.destroy(_root_node->values() + i);
+                }
 
                 if (out._value_ptr != nullptr)
                 {
@@ -922,9 +943,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
         {
             _node_type* prev_node = parent_node->nodes()[cur_node_pos - 1];
 
-            std::memcpy(prev_node->values_end(),
-                        cur_node->values(),
-                        cur_node->_count * sizeof(_value_type));
+            for (uint32_t i = 0; i < cur_node->_count; ++i)
+            {
+                _awrapper.construct(prev_node->values_end() + i, std::move(cur_node->values()[i]));
+                _awrapper.destroy(cur_node->values() + i);
+            }
 
             if (!value_at_end)
             {
@@ -950,9 +973,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
         {
             _node_type* next_node = parent_node->nodes()[cur_node_pos + 1];
 
-            std::memcpy(cur_node->values_end(),
-                        next_node->values(),
-                        next_node->_count * sizeof(_value_type));
+            for (uint32_t i = 0; i < next_node->_count; ++i)
+            {
+                _awrapper.construct(cur_node->values_end() + i, std::move(next_node->values()[i]));
+                _awrapper.destroy(next_node->values() + i);
+            }
 
             cur_node->_count += next_node->_count;
 
@@ -1175,9 +1200,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
         {
             _node_type* prev_node = parent_node->nodes()[cur_node_pos - 1];
 
-            std::memcpy(prev_node->values_end(),
-                        cur_node->values(),
-                        cur_node->_count * sizeof(_value_type));
+            for (uint32_t i = 0; i < cur_node->_count; ++i)
+            {
+                _awrapper.construct(prev_node->values_end() + i, std::move(cur_node->values()[i]));
+                _awrapper.destroy(cur_node->values() + i);
+            }
 
             prev_node->_count += cur_node->_count;
             deallocate_node(cur_node);
@@ -1258,11 +1285,8 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
         {
             first_erase_count = (uint32_t)(last._value_ptr - first._value_ptr);
 
-            _awrapper.destroy(first._value_ptr, last._value_ptr);
-
-            std::memmove(first._value_ptr,
-                         last._value_ptr,
-                         (uintptr_t)first_cur_node->values_end() - (uintptr_t)last._value_ptr);
+            std::move(last._value_ptr, first_cur_node->values_end(), (_moveable_value_type*)first._value_ptr);
+            _awrapper.destroy(first_cur_node->values_end() - first_erase_count, first_cur_node->values_end());
 
             first_cur_node->_count -= first_erase_count;
             _values_count -= first_erase_count;
@@ -1284,11 +1308,8 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
 
             last_erase_count = (uint32_t)(last._value_ptr - last_cur_node->values());
 
-            _awrapper.destroy(last_cur_node->values(), last._value_ptr);
-
-            std::memmove(last_cur_node->values(),
-                         last._value_ptr,
-                         (uintptr_t)last_cur_node->values_end() - (uintptr_t)last._value_ptr);
+            std::move(last._value_ptr, last_cur_node->values_end(), (_moveable_value_type*)last_cur_node->values());
+            _awrapper.destroy(last_cur_node->values_end() - last_erase_count, last_cur_node->values_end());
 
             last_cur_node->_count -= last_erase_count;
             _values_count -= last_erase_count;
@@ -1326,9 +1347,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
         {
             new_first_cur_node = first_parent_node->nodes()[first_cur_node_pos - 1];
 
-            std::memcpy(new_first_cur_node->values_end(),
-                        first_cur_node->values(),
-                        first_cur_node->_count * sizeof(_value_type));
+            for (uint32_t i = 0; i < first_cur_node->_count; ++i)
+            {
+                _awrapper.construct(new_first_cur_node->values_end() + i, std::move(first_cur_node->values()[i]));
+                _awrapper.destroy(first_cur_node->values() + i);
+            }
 
             if (same_parent)
             {
@@ -1350,9 +1373,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
         {
             _node_type* last_next_node = last_parent_node->nodes()[last_cur_node_pos + 1];
 
-            std::memcpy(last_cur_node->values_end(),
-                        last_next_node->values(),
-                        last_next_node->_count * sizeof(_value_type));
+            for (uint32_t i = 0; i < last_next_node->_count; ++i)
+            {
+                _awrapper.construct(last_cur_node->values_end() + i, std::move(last_next_node->values()[i]));
+                _awrapper.destroy(last_next_node->values() + i);
+            }
 
             last_cur_node->_count += last_next_node->_count;
             deallocate_node(last_next_node);
@@ -1373,9 +1398,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
                 {
                     _node_type* first_next_node = first_parent_node->nodes()[first_cur_node_pos + 1];
 
-                    std::memcpy(new_first_cur_node->values_end(),
-                                first_next_node->values(),
-                                first_next_node->_count * sizeof(_value_type));
+                    for (uint32_t i = 0; i < first_next_node->_count; ++i)
+                    {
+                        _awrapper.construct(new_first_cur_node->values_end() + i, std::move(first_next_node->values()[i]));
+                        _awrapper.destroy(first_next_node->values() + i);
+                    }
 
                     new_first_cur_node->_count += first_next_node->_count;
                     deallocate_node(first_next_node);
@@ -1407,9 +1434,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
                 if (new_first_cur_node != nullptr &&
                     new_first_cur_node->_count + last_cur_node->_count <= __bucket_values_capacity_max / 2)
                 {
-                    std::memcpy(new_first_cur_node->values_end(),
-                                last_cur_node->values(),
-                                last_cur_node->_count * sizeof(_value_type));
+                    for (uint32_t i = 0; i < last_cur_node->_count; ++i)
+                    {
+                        _awrapper.construct(new_first_cur_node->values_end() + i, std::move(last_cur_node->values()[i]));
+                        _awrapper.destroy(last_cur_node->values() + i);
+                    }
 
                     out._value_ptr = new_first_cur_node->values_end();
                     out._stack[0] = first._stack[0] - first_cur_node_is_empty;
@@ -1755,9 +1784,11 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
                 _node_type* new_root_node = allocate_root_node(root_bucket_bysize);
                 new_root_node->_count = _root_node->_count;
 
-                std::memcpy(new_root_node->values(),
-                            _root_node->values(),
-                            values_bysize);
+                for (uint32_t i = 0; i < _root_node->_count; ++i)
+                {
+                    _awrapper.construct(new_root_node->values() + i, std::move(_root_node->values()[i]));
+                    _awrapper.destroy(_root_node->values() + i);
+                }
 
                 if (out._value_ptr != nullptr)
                 {
@@ -1775,16 +1806,16 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
 
 }; // _bplus_tree
 
-template<typename _a, typename _b, typename _c, typename _d, typename _e, uint32_t _f, uint32_t _g>
-inline bool operator == (const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g>& x,
-                         const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g>& y)
+template<typename _a, typename _b, typename _c, typename _d, typename _e, typename _f, uint32_t _g, uint32_t _h>
+inline bool operator == (const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g, _h>& x,
+                         const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g, _h>& y)
 {
     return x._values_count == y._values_count && std::equal(x.cbegin(), x.cend(), y.cbegin());
 }
 
-template<typename _a, typename _b, typename _c, typename _d, typename _e, uint32_t _f, uint32_t _g>
-inline bool operator < (const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g>& x,
-                        const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g>& y)
+template<typename _a, typename _b, typename _c, typename _d, typename _e, typename _f, uint32_t _g, uint32_t _h>
+inline bool operator < (const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g, _h>& x,
+                        const xxfl::_bplus_tree<_a, _b, _c, _d, _e, _f, _g, _h>& y)
 {
     return std::lexicographical_compare(x.cbegin(), x.cend(), y.cbegin(), y.cend());
 }
