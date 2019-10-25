@@ -3,7 +3,7 @@
 
 namespace std {
 
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
 
 #define __throw_out_of_range _Xout_of_range
 
@@ -44,7 +44,7 @@ namespace xxfl {
 template<typename _allocator>
 struct __alloc_wrapper
 {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
     typedef std::allocator_traits<_allocator> _alloc_traits;
 #else
     typedef __gnu_cxx::__alloc_traits<_allocator> _alloc_traits;
@@ -64,7 +64,7 @@ struct __alloc_wrapper
 
     static constexpr bool propagate_on_container_copy_assignment()
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         return _alloc_traits::propagate_on_container_copy_assignment::value;
 #else
         return _alloc_traits::_S_propagate_on_copy_assign();
@@ -73,7 +73,7 @@ struct __alloc_wrapper
 
     static constexpr bool propagate_on_container_move_assignment()
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         return _alloc_traits::propagate_on_container_move_assignment::value;
 #else
         return _alloc_traits::_S_propagate_on_move_assign();
@@ -82,7 +82,7 @@ struct __alloc_wrapper
 
     static constexpr bool allocator_always_compares_equal()
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         return _alloc_traits::is_always_equal::value;
 #else
         return _alloc_traits::_S_always_equal();
@@ -91,7 +91,7 @@ struct __alloc_wrapper
 
     static constexpr bool is_nothrow_swap()
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         return std::_Is_nothrow_swappable<_allocator>::value;
 #else
         return _alloc_traits::_S_nothrow_swap();
@@ -105,7 +105,7 @@ struct __alloc_wrapper
 
     _allocator select_on_container_copy_construction() const
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         return _alloc_traits::select_on_container_copy_construction(_alloc);
 #else
         return _alloc_traits::_S_select_on_copy(_alloc);
@@ -114,7 +114,7 @@ struct __alloc_wrapper
 
     void copy_allocator(const _allocator& a)
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         std::_Pocca(_alloc, a);
 #else
         std::__alloc_on_copy(_alloc, a);
@@ -123,7 +123,7 @@ struct __alloc_wrapper
 
     void move_allocator(_allocator& a)
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         std::_Pocma(_alloc, a);
 #else
         std::__alloc_on_move(_alloc, a);
@@ -132,7 +132,7 @@ struct __alloc_wrapper
 
     void swap_allocator(_allocator& a)
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         std::_Pocs(_alloc, a);
 #else
         std::__alloc_on_swap(_alloc, a);
@@ -141,7 +141,7 @@ struct __alloc_wrapper
 
     pointer allocate(size_type size)
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         return _alloc.allocate(size);
 #else
         return _alloc_traits::allocate(_alloc, size);
@@ -150,7 +150,7 @@ struct __alloc_wrapper
 
     void deallocate(pointer p, size_type size)
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         _alloc.deallocate(p, size);
 #else
         _alloc_traits::deallocate(_alloc, p, size);
@@ -160,7 +160,7 @@ struct __alloc_wrapper
     template<typename _ptr, typename... _args>
     void construct(_ptr p, _args&&... args)
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         _alloc.construct(p, std::forward<_args>(args)...);
 #else
         _alloc_traits::construct(_alloc, p, std::forward<_args>(args)...);
@@ -170,7 +170,7 @@ struct __alloc_wrapper
     template<typename _ptr>
     void destroy(_ptr p)
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         _alloc.destroy(p);
 #else
         _alloc_traits::destroy(_alloc, p);
@@ -180,7 +180,7 @@ struct __alloc_wrapper
     template<typename _input_iterator>
     void destroy(_input_iterator first, _input_iterator last)
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         std::_Destroy_range(first, last);
 #else
         std::_Destroy(first, last, _alloc);
@@ -189,7 +189,7 @@ struct __alloc_wrapper
 
     size_type max_size() const noexcept
     {
-#if defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)
         return _alloc.max_size();
 #else
         return _alloc_traits::max_size(_alloc);
