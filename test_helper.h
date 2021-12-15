@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define __STDC_FORMAT_MACROS
 
@@ -30,14 +30,8 @@ typedef std::allocator<uint8_t> def_allocator;
 typedef xxfl::set<test_int>    xxfl_int_set;
 typedef xxfl::set<std::string> xxfl_string_set;
 
-typedef xxfl::set<test_int, def_int_compare, def_allocator, sizeof(test_int) * 8, 24>          xxfl_thin_int_set;
-typedef xxfl::set<std::string, def_string_compare, def_allocator, sizeof(std::string) * 8, 24> xxfl_thin_string_set;
-
 typedef xxfl::map<test_int, test_int>       xxfl_int_map;
 typedef xxfl::map<std::string, std::string> xxfl_string_map;
-
-typedef xxfl::map<test_int, test_int, def_int_compare, def_allocator, sizeof(int_pair) * 8, 12>             xxfl_thin_int_map;
-typedef xxfl::map<std::string, std::string, def_string_compare, def_allocator, sizeof(string_pair) * 8, 12> xxfl_thin_string_map;
 
 typedef std::set<test_int>    std_int_set;
 typedef std::set<std::string> std_string_set;

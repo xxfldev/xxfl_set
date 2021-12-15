@@ -1,4 +1,4 @@
-#include "xxfl_set_test.h"
+﻿#include "xxfl_set_test.h"
 
 static const uint32_t def_insert_count = 10000;
 
@@ -1109,24 +1109,12 @@ void interface_test()
     std::printf("xxfl_int_set: ");
     int_set_interface_test<xxfl_int_set>();
 
-    std::printf("xxfl_thin_int_set: ");
-    int_set_interface_test<xxfl_thin_int_set>();
-
     std::printf("xxfl_string_set: ");
     string_set_interface_test<xxfl_string_set>();
-
-    std::printf("xxfl_thin_string_set: ");
-    string_set_interface_test<xxfl_thin_string_set>();
 
     std::printf("xxfl_int_map: ");
     int_map_interface_test<xxfl_int_map>();
 
-    std::printf("xxfl_thin_int_map: ");
-    int_map_interface_test<xxfl_thin_int_map>();
-
     std::printf("xxfl_string_map: ");
     string_map_interface_test<xxfl_string_map>();
-
-    std::printf("xxfl_thin_string_map: ");
-    string_map_interface_test<xxfl_thin_string_map>();
 }

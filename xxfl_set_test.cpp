@@ -19,10 +19,10 @@ int main()
                     "select: ");
 
         uint32_t select_idx = 0;
-        std::scanf("%u", &select_idx);
+        int ns = std::scanf("%u", &select_idx);
         std::printf("\n");
 
-        if (select_idx == 0)
+        if (select_idx == 0 || ns < 1)
         {
             break;
         }

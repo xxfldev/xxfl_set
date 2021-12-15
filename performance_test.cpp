@@ -1,49 +1,18 @@
+#include <chrono>
 #include "xxfl_set_test.h"
 
-#if defined(_MSC_VER)
-#include <windows.h>
-
-typedef LARGE_INTEGER timestamp_t;
-
-static LARGE_INTEGER frequency = { 0, 0 };
+typedef std::chrono::steady_clock::time_point timestamp_t;
 
 timestamp_t get_cur_time()
 {
-    timestamp_t ts;
-    QueryPerformanceCounter(&ts);
-    return ts;
+    return std::chrono::steady_clock::now();
 }
 
 double get_elapsed_time(const timestamp_t& start)
 {
-    timestamp_t end = get_cur_time();
-
-    if (frequency.QuadPart == 0)
-    {
-        QueryPerformanceFrequency(&frequency);
-    }
-
-    return double(end.QuadPart - start.QuadPart) / frequency.QuadPart;
+    using namespace std::chrono;
+    return duration_cast<duration<double>>(steady_clock::now() - start).count();
 }
-
-#else
-#include <sys/time.h>
-
-typedef timeval timestamp_t;
-
-timestamp_t get_cur_time()
-{
-    timestamp_t ts;
-    gettimeofday(&ts, nullptr);
-    return ts;
-}
-
-double get_elapsed_time(const timestamp_t& start)
-{
-    timestamp_t end = get_cur_time();
-    return (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_usec - start.tv_usec) / 1000000.0;
-}
-#endif
 
 template<typename _container>
 void container_test_insert_performance_sequential(uint32_t insert_count, uint32_t loops_count)
@@ -79,10 +48,10 @@ void test_insert_performance()
 
     std::printf("insert count: ");
     uint32_t insert_count = 0;
-    std::scanf("%u", &insert_count);
+    int ns = std::scanf("%u", &insert_count);
     std::printf("\n");
 
-    if (insert_count == 0)
+    if (insert_count == 0 || ns < 1)
     {
         return;
     }
@@ -221,10 +190,10 @@ void test_erase_performance()
 
     std::printf("erase count: ");
     uint32_t erase_count = 0;
-    std::scanf("%u", &erase_count);
+    int ns = std::scanf("%u", &erase_count);
     std::printf("\n");
 
-    if (erase_count == 0)
+    if (erase_count == 0 || ns < 1)
     {
         return;
     }
@@ -341,10 +310,10 @@ void test_find_performance()
 
     std::printf("values count: ");
     uint32_t values_count = 0;
-    std::scanf("%u", &values_count);
+    int ns = std::scanf("%u", &values_count);
     std::printf("\n");
 
-    if (values_count == 0)
+    if (values_count == 0 || ns < 1)
     {
         return;
     }
@@ -418,10 +387,10 @@ void test_traversing_performance()
 
     std::printf("values count: ");
     uint32_t values_count = 0;
-    std::scanf("%u", &values_count);
+    int ns = std::scanf("%u", &values_count);
     std::printf("\n");
 
-    if (values_count == 0)
+    if (values_count == 0 || ns < 1)
     {
         return;
     }
@@ -512,10 +481,10 @@ void test_combined_performance()
 
     std::printf("values count: ");
     uint32_t values_count = 0;
-    std::scanf("%u", &values_count);
+    int ns = std::scanf("%u", &values_count);
     std::printf("\n");
 
-    if (values_count == 0)
+    if (values_count == 0 || ns < 1)
     {
         return;
     }
@@ -582,10 +551,10 @@ void performance_test()
                     "select: ");
 
         uint32_t select_idx = 0;
-        std::scanf("%u", &select_idx);
+        int ns = std::scanf("%u", &select_idx);
         std::printf("\n");
 
-        if (select_idx == 0)
+        if (select_idx == 0 || ns < 1)
         {
             return;
         }

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "test_helper.h"
 
 void interface_test();

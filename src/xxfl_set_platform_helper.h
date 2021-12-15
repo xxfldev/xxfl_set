@@ -1,10 +1,10 @@
 #pragma once
+
 #include <memory>
 
 namespace std {
 
 #if defined(_WIN32) && defined(_MSC_VER)
-
 #define __throw_out_of_range _Xout_of_range
 
 template<typename _tp>
@@ -31,7 +31,6 @@ template<typename _input_iterator>
 _input_iterator& __make_move_if_noexcept_iterator(_input_iterator& iter) { return iter; }
 
 #else
-
 #define __identity  _Identity
 #define __select1st _Select1st
 

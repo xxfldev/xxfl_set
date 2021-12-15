@@ -1,4 +1,5 @@
-#pragma once
+﻿#pragma once
+
 #include <cstddef>
 #include <algorithm>
 #include <cstring>
@@ -1128,50 +1129,6 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
         return 0;
     }
 
-#if 0
-    template<typename _output_iterator>
-    _output_iterator erase_range(const _const_iterator& first,
-                                 const _const_iterator& last)
-    {
-        if (first._value_ptr == nullptr)
-        {
-            return _output_iterator(this, nullptr);
-        }
-        else if (last._value_ptr == nullptr)
-        {
-            if (first == _base::cbegin())
-            {
-                clear();
-            }
-            else
-            {
-                _const_iterator it(first);
-                while (it._value_ptr != nullptr)
-                {
-                    it = erase_core<_const_iterator>(it);
-                }
-            }
-
-            return _output_iterator(this, nullptr);
-        }
-        else
-        {
-            uint8_t last_key_buf[sizeof(_key_type)];
-            _key_type* last_key = (_key_type*)last_key_buf;
-            _awrapper.construct(last_key, _key_of_value()(*last));
-
-            _const_iterator it(first);
-            while (key_larger(*last_key, *it))
-            {
-                it = erase_core<_const_iterator>(it);
-            }
-
-            _awrapper.destroy(last_key);
-            return _output_iterator(it._const_cast());
-        }
-    }
-
-#else // an improved implementation, need more tests
     void erase_range_core(const _const_iterator& first)
     {
         _node_type* cur_node = (_tree_height > 0)? *first._stack[0] : _root_node;
@@ -1802,7 +1759,6 @@ struct _bplus_tree : _bplus_tree_base<_value_type, _tree_height_max>
 
         return out;
     }
-#endif // erase_range
 
 }; // _bplus_tree
 
